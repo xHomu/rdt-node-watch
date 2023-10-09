@@ -9,6 +9,11 @@ import express from "express";
 import morgan from "morgan";
 import sourceMapSupport from "source-map-support";
 
+const rdt =
+  process.env.NODE_ENV === "development"
+    ? await import("remix-development-tools/server")
+    : null;
+
 sourceMapSupport.install();
 installGlobals();
 
@@ -66,7 +71,9 @@ async function reimportServer() {
   const BUILD_URL = url.pathToFileURL(BUILD_PATH).href;
 
   // use a timestamp query parameter to bust the import cache
-  return import(BUILD_URL + "?t=" + stat.mtimeMs);
+  return rdt?.withServerDevTools
+    ? rdt.withServerDevTools(await import(BUILD_URL + "?t=" + stat.mtimeMs))
+    : await import(BUILD_URL + "?t=" + stat.mtimeMs);
 }
 
 /**
